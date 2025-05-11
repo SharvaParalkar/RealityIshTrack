@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Watch Party Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+    }
+    #progressContainer {
+      width: 80%;
+      height: 20px;
+      background: #333;
+      border-radius: 10px;
+      margin: 20px;
+    }
+    #progressBar {
+      height: 100%;
+      background: #1f6463;
+      border-radius: 10px;
+      transition: width 0.5s;
+    }
+    #timeDisplay {
+      font-size: 24px;
+      margin: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="episodeTitle">--:--:-- / --:--:--</h1>
+  <div id="progressContainer">
+    <div id="progressBar"></div>
+  </div>
+  <div id="timeDisplay"></div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/library/d/1TJQudv5FVx8nuKNU7O2-bbV8dy8IfFfZevzAKTXWFiGbHvzxUeHTY_o8/7";
+
+    function updateDisplay() {
+      fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.startTime) {
+            document.getElementById('episodeTitle').textContent = "No active session";
+            return;
+          }
+
+          // Calculate elapsed time
+          const now = Date.now();
+          let elapsed = (now - data.startTime) / 1000;
+          if (data.paused && data.pauseTime) {
+            elapsed = (data.pauseTime - data.startTime) / 1000;
+          }
+
+          // Update UI
+          document.getElementById('episodeTitle').textContent = data.title;
+          document.getElementById('progressBar').style.width = 
+            `${Math.min(100, (elapsed / data.totalSeconds) * 100)}%`;
+          
+          document.getElementById('timeDisplay').textContent = 
+            `${formatTime(elapsed)} / ${formatTime(data.totalSeconds)}`;
+        })
+        .catch(err => console.error('Sync error:', err));
+    }
+
+    function formatTime(seconds) {
+      const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
+      const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+      const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${hrs}:${mins}:${secs}`;
+    }
+
+    // Update every second
+    setInterval(updateDisplay, 1000);
+    updateDisplay(); // Initial call
+  </script>
+</body>
+</html>

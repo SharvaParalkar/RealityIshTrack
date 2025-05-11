@@ -48,9 +48,7 @@
   <div class="status" id="status"></div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxw-GJCBHmceEOkSI4TttIqAYh5UtrkWBgvNtZkGFrNyV9PShwqxxJU2cPVWGlQLQiy7w/exec";
-
-    console.log("Watch Party Host loaded");
+    const API_URL = "https://script.google.com/macros/library/d/1TJQudv5FVx8nuKNU7O2-bbV8dy8IfFfZevzAKTXWFiGbHvzxUeHTY_o8/7";
 
     function startParty() {
       const [title, duration] = getInputs();
@@ -60,9 +58,13 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "start", title, duration })
-      }).then(res => res.text())
-        .then(msg => setStatus("✅ " + msg))
-        .catch(() => setStatus("❌ Failed to start."));
+      })
+      .then(async res => {
+        const text = await res.text();
+        if (!res.ok) throw new Error(text);
+        setStatus("✅ Started successfully");
+      })
+      .catch(err => setStatus(`❌ Error: ${err.message}`));
     }
 
     function pauseParty() {
@@ -70,9 +72,9 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "pause" })
-      }).then(res => res.text())
-        .then(msg => setStatus("⏸️ " + msg))
-        .catch(() => setStatus("❌ Failed to pause."));
+      })
+      .then(() => setStatus("⏸️ Paused"))
+      .catch(err => setStatus(`❌ Pause failed: ${err.message}`));
     }
 
     function resumeParty() {
@@ -80,35 +82,23 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "resume" })
-      }).then(res => res.text())
-        .then(msg => setStatus("▶️ " + msg))
-        .catch(() => setStatus("❌ Failed to resume."));
+      })
+      .then(() => setStatus("▶️ Resumed"))
+      .catch(err => setStatus(`❌ Resume failed: ${err.message}`));
     }
 
-function updateInfo() {
-  const [title, duration] = getInputs();
-  if (!title || !validDuration(duration)) return;
+    function updateInfo() {
+      const [title, duration] = getInputs();
+      if (!title || !validDuration(duration)) return;
 
-  const payload = { action: "update", title, duration };
-  console.log("Sending updateInfo POST payload:", payload);
-
-  fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-    .then(async res => {
-      const text = await res.text();
-      console.log("Server response:", text);
-      if (!res.ok) throw new Error("Bad response from server");
-      setStatus("🔄 " + text);
-    })
-    .catch(err => {
-      console.error("Update failed:", err);
-      setStatus("❌ Failed to update info. Check console for details.");
-    });
-}
-
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update", title, duration })
+      })
+      .then(() => setStatus("🔄 Info updated"))
+      .catch(err => setStatus(`❌ Update failed: ${err.message}`));
+    }
 
     function getInputs() {
       return [
@@ -119,7 +109,7 @@ function updateInfo() {
 
     function validDuration(duration) {
       if (!/^\d{2}:\d{2}:\d{2}$/.test(duration)) {
-        setStatus("❌ Enter duration as hh:mm:ss.");
+        setStatus("❌ Use hh:mm:ss format");
         return false;
       }
       return true;
