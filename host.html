@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Watch Party Host Control</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+    }
+    input {
+      width: 300px;
+    }
+    button {
+      cursor: pointer;
+      background-color: #1f6463;
+      color: white;
+    }
+    .status {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #bd8c7d;
+    }
+  </style>
+</head>
+<body>
+  <h1>Watch Party Host</h1>
+  <input type="text" id="title" placeholder="Episode Title (e.g. Stranger Things S1E1)">
+  <input type="text" id="duration" placeholder="Duration (hh:mm:ss, e.g. 00:25:00)">
+  <div>
+    <button onclick="startParty()">Start</button>
+    <button onclick="pauseParty()">Pause</button>
+    <button onclick="resumeParty()">Resume</button>
+    <button onclick="updateInfo()">Update Info</button>
+  </div>
+  <div class="status" id="status"></div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbz01vUKTmkzBo1cCguxAsFhuskclRAQmr0emiX40Eqjc6kIZU02rrNO0TJc6HDYiB_V2A/exec";
+
+    console.log("Watch Party Host loaded");
+
+    function startParty() {
+      const [title, duration] = getInputs();
+      if (!title || !validDuration(duration)) return;
+
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "start", title, duration })
+      }).then(res => res.text())
+        .then(msg => setStatus("✅ " + msg))
+        .catch(() => setStatus("❌ Failed to start."));
+    }
+
+    function pauseParty() {
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "pause" })
+      }).then(res => res.text())
+        .then(msg => setStatus("⏸️ " + msg))
+        .catch(() => setStatus("❌ Failed to pause."));
+    }
+
+    function resumeParty() {
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resume" })
+      }).then(res => res.text())
+        .then(msg => setStatus("▶️ " + msg))
+        .catch(() => setStatus("❌ Failed to resume."));
+    }
+
+function updateInfo() {
+  const [title, duration] = getInputs();
+  if (!title || !validDuration(duration)) return;
+
+  const payload = { action: "update", title, duration };
+  console.log("Sending updateInfo POST payload:", payload);
+
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(async res => {
+      const text = await res.text();
+      console.log("Server response:", text);
+      if (!res.ok) throw new Error("Bad response from server");
+      setStatus("🔄 " + text);
+    })
+    .catch(err => {
+      console.error("Update failed:", err);
+      setStatus("❌ Failed to update info. Check console for details.");
+    });
+}
+
+
+    function getInputs() {
+      return [
+        document.getElementById('title').value.trim(),
+        document.getElementById('duration').value.trim()
+      ];
+    }
+
+    function validDuration(duration) {
+      if (!/^\d{2}:\d{2}:\d{2}$/.test(duration)) {
+        setStatus("❌ Enter duration as hh:mm:ss.");
+        return false;
+      }
+      return true;
+    }
+
+    function setStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+  </script>
+</body>
+</html>
