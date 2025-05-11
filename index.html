@@ -57,31 +57,24 @@
     fetch(API_URL)
       .then(res => res.json())
       .then(data => {
-        if (!data.startTime) {
+        if (!data.startTime || !data.duration) {
           document.getElementById('episodeTitle').textContent = "No active session";
           document.getElementById('timeDisplay').textContent = "--:--:--";
           return;
         }
 
         const totalSeconds = parseDuration(data.duration);
-        const now = data.now;
-        const paused = data.paused;
-        const pauseTime = data.pauseTime;
-        const startTime = data.startTime;
-
-        let elapsed = paused && pauseTime
-          ? (pauseTime - startTime) / 1000
-          : (now - startTime) / 1000;
-
-        let remaining = Math.max(totalSeconds - Math.floor(elapsed), 0);
-
-        document.getElementById('episodeTitle').textContent = data.title;
+        const startTime = Number(data.startTime);
+        const now = Number(data.now);
+        let remaining = Math.max(totalSeconds - Math.floor((now - startTime) / 1000), 0);
 
         const progressBar = document.getElementById('progressBar');
         const timeDisplay = document.getElementById('timeDisplay');
+        document.getElementById('episodeTitle').textContent = data.title;
 
         function updateCountdown() {
-          const progress = Math.min(100, ((totalSeconds - remaining) / totalSeconds) * 100);
+          const elapsed = totalSeconds - remaining;
+          const progress = Math.min(100, (elapsed / totalSeconds) * 100);
           progressBar.style.width = `${progress}%`;
           timeDisplay.textContent = `${formatTime(remaining)} / ${formatTime(totalSeconds)}`;
           remaining--;
@@ -93,7 +86,7 @@
           }
         }
 
-        updateCountdown(); // first call
+        updateCountdown();
         const timer = setInterval(updateCountdown, 1000);
       })
       .catch(err => {
