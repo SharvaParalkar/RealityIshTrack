@@ -44,60 +44,94 @@
     <button onclick="pauseParty()">Pause</button>
     <button onclick="resumeParty()">Resume</button>
     <button onclick="updateInfo()">Update Info</button>
+    <button onclick="checkStatus()">Check Status</button>
   </div>
   <div class="status" id="status"></div>
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxw-GJCBHmceEOkSI4TttIqAYh5UtrkWBgvNtZkGFrNyV9PShwqxxJU2cPVWGlQLQiy7w/exec";
 
-    function startParty() {
+    async function startParty() {
       const [title, duration] = getInputs();
       if (!title || !validDuration(duration)) return;
 
-      fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "start", title, duration })
-      })
-      .then(async res => {
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          mode: "cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "start", title, duration })
+        });
         const text = await res.text();
         if (!res.ok) throw new Error(text);
         setStatus("✅ Started successfully");
-      })
-      .catch(err => setStatus(`❌ Error: ${err.message}`));
+      } catch (err) {
+        setStatus(`❌ Error: ${err.message}`);
+      }
     }
 
-    function pauseParty() {
-      fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "pause" })
-      })
-      .then(() => setStatus("⏸️ Paused"))
-      .catch(err => setStatus(`❌ Pause failed: ${err.message}`));
+    async function pauseParty() {
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          mode: "cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "pause" })
+        });
+        const text = await res.text();
+        if (!res.ok) throw new Error(text);
+        setStatus("⏸️ Paused");
+      } catch (err) {
+        setStatus(`❌ Pause failed: ${err.message}`);
+      }
     }
 
-    function resumeParty() {
-      fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "resume" })
-      })
-      .then(() => setStatus("▶️ Resumed"))
-      .catch(err => setStatus(`❌ Resume failed: ${err.message}`));
+    async function resumeParty() {
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          mode: "cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "resume" })
+        });
+        const text = await res.text();
+        if (!res.ok) throw new Error(text);
+        setStatus("▶️ Resumed");
+      } catch (err) {
+        setStatus(`❌ Resume failed: ${err.message}`);
+      }
     }
 
-    function updateInfo() {
+    async function updateInfo() {
       const [title, duration] = getInputs();
       if (!title || !validDuration(duration)) return;
 
-      fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update", title, duration })
-      })
-      .then(() => setStatus("🔄 Info updated"))
-      .catch(err => setStatus(`❌ Update failed: ${err.message}`));
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          mode: "cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "update", title, duration })
+        });
+        const text = await res.text();
+        if (!res.ok) throw new Error(text);
+        setStatus("🔄 Info updated");
+      } catch (err) {
+        setStatus(`❌ Update failed: ${err.message}`);
+      }
+    }
+
+    async function checkStatus() {
+      try {
+        const res = await fetch(API_URL, {
+          method: "GET",
+          mode: "cors"
+        });
+        const data = await res.json();
+        setStatus(`📺 Now: ${data.title} (${data.duration})`);
+      } catch (err) {
+        setStatus(`❌ Failed to fetch: ${err.message}`);
+      }
     }
 
     function getInputs() {
