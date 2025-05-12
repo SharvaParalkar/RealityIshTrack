@@ -249,82 +249,86 @@
 
   let timer = null;
 
-  function fetchAndUpdate() {
-    fetch(API_URL)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Fetched data:", data);
-        const loader = document.getElementById("loader");
-        loader.style.display = "none";
+function fetchAndUpdate() {
+  fetch(API_URL)
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("Fetched data:", data);
+      const loader = document.getElementById("loader");
+      loader.style.display = "none";
 
-        if (!data.startTime || !data.duration) {
-          document.getElementById("episodeTitle").textContent =
-            "No active session";
-          document.getElementById("timeDisplay").textContent = "--:--:--";
-          return;
+      const progressBar = document.getElementById("progressBar");
+      const timeDisplay = document.getElementById("timeDisplay");
+      const episodeTitle = document.getElementById("episodeTitle");
+      const episodeNumber = document.getElementById("episodeNumber");
+      const whereLabel = document.getElementById("whereLabel");
+
+      if (!data.startTime || !data.duration || !data.title) {
+        if (timer) clearInterval(timer); // stop countdown if it was running
+        episodeTitle.textContent = "No active session";
+        episodeNumber.textContent = "";
+        episodeNumber.style.display = "none";
+        whereLabel.textContent = "";
+        timeDisplay.textContent = "--:--:--";
+        progressBar.style.width = "0%";
+        return;
+      }
+
+      const totalSeconds = parseDuration(data.duration);
+      const rawOffset = Number(data.startOffset);
+      const startOffset =
+        Number.isFinite(rawOffset) && rawOffset > 0
+          ? rawOffset
+          : totalSeconds;
+
+      const startTime = Number(data.startTime);
+      const now = Number(data.now);
+
+      let remaining = startOffset - Math.floor((now - startTime) / 1000);
+      let tick = 0;
+
+      if (!data.episode || data.episode.toString().trim() === "") {
+        episodeTitle.textContent = `Now watching : "${data.title}" (Movie)`;
+        episodeNumber.style.display = "none";
+        whereLabel.textContent = `Where we're at:`;
+      } else {
+        episodeTitle.textContent = `Now watching : "${data.title}" (Show)`;
+        episodeNumber.textContent = `Episode Number : ${data.episode}`;
+        episodeNumber.style.display = "block";
+        whereLabel.textContent = `Where we're at:`;
+      }
+
+      if (timer) clearInterval(timer);
+
+      function updateCountdown() {
+        const currentRemaining = Math.max(remaining - tick, 0);
+        const elapsed = totalSeconds - currentRemaining;
+        const progress = Math.min(100, (elapsed / totalSeconds) * 100);
+
+        progressBar.style.width = `${progress}%`;
+        timeDisplay.textContent = `${formatTime(
+          currentRemaining
+        )} / ${formatTime(totalSeconds)}`;
+
+        if (currentRemaining <= 0) {
+          clearInterval(timer);
+          timeDisplay.textContent = `00:00:00 / ${formatTime(totalSeconds)}`;
+          progressBar.style.width = "100%";
         }
 
-        const totalSeconds = parseDuration(data.duration);
-        const rawOffset = Number(data.startOffset);
-        const startOffset =
-          Number.isFinite(rawOffset) && rawOffset > 0
-            ? rawOffset
-            : totalSeconds;
+        tick++;
+      }
 
-        const startTime = Number(data.startTime);
-        const now = Number(data.now);
+      updateCountdown();
+      timer = setInterval(updateCountdown, 1000);
+    })
+    .catch((err) => {
+      console.error("Failed to fetch session data:", err);
+      document.getElementById("timeDisplay").textContent = "Error loading data";
+      document.getElementById("loader").style.display = "none";
+    });
+}
 
-        let remaining = startOffset - Math.floor((now - startTime) / 1000);
-        let tick = 0;
-
-        const progressBar = document.getElementById("progressBar");
-        const timeDisplay = document.getElementById("timeDisplay");
-        const episodeTitle = document.getElementById("episodeTitle");
-        const episodeNumber = document.getElementById("episodeNumber");
-        const whereLabel = document.getElementById("whereLabel");
-
-        if (!data.episode || data.episode.toString().trim() === "") {
-          episodeTitle.textContent = `Now watching : "${data.title}" (Movie)`;
-          episodeNumber.style.display = "none";
-          whereLabel.textContent = `Where we're at:`;
-        } else {
-          episodeTitle.textContent = `Now watching : "${data.title}" (Show)`;
-          episodeNumber.textContent = `Episode Number : ${data.episode}`;
-          episodeNumber.style.display = "block";
-          whereLabel.textContent = `Where we're at:`;
-        }
-
-        if (timer) clearInterval(timer);
-
-        function updateCountdown() {
-          const currentRemaining = Math.max(remaining - tick, 0);
-          const elapsed = totalSeconds - currentRemaining;
-          const progress = Math.min(100, (elapsed / totalSeconds) * 100);
-
-          progressBar.style.width = `${progress}%`;
-          timeDisplay.textContent = `${formatTime(
-            currentRemaining
-          )} / ${formatTime(totalSeconds)}`;
-
-          if (currentRemaining <= 0) {
-            clearInterval(timer);
-            timeDisplay.textContent = `00:00:00 / ${formatTime(totalSeconds)}`;
-            progressBar.style.width = "100%";
-          }
-
-          tick++;
-        }
-
-        updateCountdown();
-        timer = setInterval(updateCountdown, 1000);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch session data:", err);
-        document.getElementById("timeDisplay").textContent =
-          "Error loading data";
-        document.getElementById("loader").style.display = "none";
-      });
-  }
 
   // Initial fetch
   fetchAndUpdate();
