@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <title>Watch Party Viewer</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Watch Party Viewer</title>
+  
     <style>
       :root {
         --bg: #111;
@@ -24,17 +26,28 @@
         font-family: Arial, sans-serif;
         background-color: var(--bg);
         color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: background 0.3s, color 0.3s;
+        padding: 20px;
+      }
+
+      #contentWrapper {
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 60px 20px 60px;
-        transition: background 0.3s, color 0.3s;
+        margin-top: 125px;
+        margin-bottom: auto;
+        flex-grow: 1;
       }
 
       #episodeTitle {
         font-size: 32px;
         font-weight: bold;
-        margin-bottom: 30px;
+        margin-bottom: 10px;
+        text-align: center;
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
       }
 
@@ -43,6 +56,7 @@
         font-weight: bold;
         margin: 0 0 6px;
         display: none;
+        text-align: center;
       }
 
       #whereLabel {
@@ -51,6 +65,7 @@
         margin-bottom: 30px;
         color: var(--subtle);
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        text-align: center;
       }
 
       #progressContainer {
@@ -102,16 +117,15 @@
       }
 
       #themeToggle {
-        position: absolute;
-        top: 20px;
-        right: 20px;
         background: none;
         border: 2px solid var(--subtle);
         border-radius: 20px;
-        padding: 5px 12px;
+        padding: 6px 14px;
         color: var(--text);
         cursor: pointer;
         font-weight: bold;
+        margin-top: 20px;
+        align-self: center;
         transition: 0.3s;
       }
 
@@ -122,6 +136,7 @@
 
         #episodeTitle {
           font-size: 26px;
+          margin-bottom: 20px;
         }
 
         #episodeNumber {
@@ -134,24 +149,30 @@
 
         #themeToggle {
           font-size: 14px;
-          padding: 4px 10px;
+          padding: 5px 12px;
+        }
+
+        #contentWrapper {
+          margin-top: 125px;
         }
       }
+
     </style>
   </head>
   <body>
-    <button id="themeToggle">Toggle Theme</button>
+    <div id="contentWrapper">
+      <h1 id="episodeTitle">Now watching :</h1>
+      <p id="episodeNumber"></p>
+      <p id="whereLabel">Where we're at:</p>
 
-    <h1 id="episodeTitle">Now watching :</h1>
-    <p id="episodeNumber"></p>
-    <p id="whereLabel">Where we're at:</p>
+      <div id="progressContainer">
+        <div id="progressBar"></div>
+      </div>
 
-    <div id="progressContainer">
-      <div id="progressBar"></div>
+      <div id="timeDisplay">Loading...</div>
+      <div id="loader"></div>
+      <button id="themeToggle">Toggle Theme</button>
     </div>
-
-    <div id="timeDisplay">Loading...</div>
-    <div id="loader"></div>
 
     <script>
       const API_URL =
@@ -179,7 +200,6 @@
         .then((res) => res.json())
         .then((data) => {
           console.log("Fetched data:", data);
-
           const loader = document.getElementById("loader");
           loader.style.display = "none";
 
