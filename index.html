@@ -1,103 +1,261 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Watch Party Viewer</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #111;
-      color: #eee;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px;
-    }
-    #progressContainer {
-      width: 80%;
-      height: 20px;
-      background: #333;
-      border-radius: 10px;
-      margin: 20px;
-    }
-    #progressBar {
-      height: 100%;
-      background: #1f6463;
-      border-radius: 10px;
-      transition: width 0.5s;
-    }
-    #timeDisplay {
-      font-size: 24px;
-      margin: 20px;
-    }
-  </style>
-</head>
-<body>
-  <h1 id="episodeTitle">--:--:-- / --:--:--</h1>
-  <div id="progressContainer">
-    <div id="progressBar"></div>
-  </div>
-  <div id="timeDisplay">Loading...</div>
-
-<script>
-  const API_URL = "https://script.google.com/macros/s/AKfycby96zPEI5H5xBFHGLd4cnbYaRSEH_WHHg9Fyt9v_UG7tP2Q6ma5WuRFXDAm9WbXjlz4qA/exec";
-
-  function parseDuration(str) {
-    const [h = 0, m = 0, s = 0] = str.split(":").map(Number);
-    return h * 3600 + m * 60 + s;
-  }
-
-  function formatTime(seconds) {
-    const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-    const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
-    return `${hrs}:${mins}:${secs}`;
-  }
-
-  fetch(API_URL)
-    .then(res => res.json())
-    .then(data => {
-      if (!data.startTime || !data.duration) {
-        document.getElementById('episodeTitle').textContent = "No active session";
-        document.getElementById('timeDisplay').textContent = "--:--:--";
-        return;
+  <head>
+    <meta charset="UTF-8" />
+    <title>Watch Party Viewer</title>
+    <style>
+      :root {
+        --bg: #111;
+        --text: #eee;
+        --subtle: #ccc;
+        --progress: #1f6463;
+        --card-bg: rgba(255, 255, 255, 0.05);
       }
 
-      const totalSeconds = parseDuration(data.duration);
-      const startOffset = Number(data.startOffset || 0);
-      const startTime = Number(data.startTime);
-      const now = Number(data.now);
+      body.light {
+        --bg: #f4f4f4;
+        --text: #111;
+        --subtle: #555;
+        --progress: #2d94f0;
+        --card-bg: rgba(0, 0, 0, 0.05);
+      }
 
-      let elapsed = (now - startTime) / 1000;
-      let remaining = Math.max(totalSeconds - startOffset - Math.floor(elapsed), 0);
+      body {
+        font-family: Arial, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 60px 20px 60px;
+        transition: background 0.3s, color 0.3s;
+      }
 
-      const progressBar = document.getElementById('progressBar');
-      const timeDisplay = document.getElementById('timeDisplay');
-      document.getElementById('episodeTitle').textContent = `${data.title} (Ep ${data.episode || '?'})`;
+      #episodeTitle {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 30px;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      }
 
-      function updateCountdown() {
-        const currentElapsed = elapsed++;
-        const actualElapsed = currentElapsed + startOffset;
-        const remainingNow = Math.max(totalSeconds - Math.floor(actualElapsed), 0);
-        const progress = Math.min(100, (actualElapsed / totalSeconds) * 100);
+      #episodeNumber {
+        font-size: 28px;
+        font-weight: bold;
+        margin: 0 0 6px;
+        display: none;
+      }
 
-        progressBar.style.width = `${progress}%`;
-        timeDisplay.textContent = `${formatTime(remainingNow)} / ${formatTime(totalSeconds)}`;
+      #whereLabel {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 30px;
+        color: var(--subtle);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      }
 
-        if (remainingNow <= 0) {
-          clearInterval(timer);
-          timeDisplay.textContent = "00:00:00 / " + formatTime(totalSeconds);
-          progressBar.style.width = "100%";
+      #progressContainer {
+        width: 40%;
+        height: 16px;
+        background: #2b2b2b;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 30px;
+        box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.4);
+      }
+
+      #progressBar {
+        height: 100%;
+        width: 0%;
+        background: var(--progress);
+        transition: width 0.6s ease-out;
+      }
+
+      #timeDisplay {
+        font-size: 26px;
+        font-weight: 500;
+        color: var(--text);
+        backdrop-filter: blur(8px);
+        background: var(--card-bg);
+        padding: 10px 20px;
+        border-radius: 12px;
+        margin-top: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      }
+
+      #loader {
+        border: 6px solid rgba(255, 255, 255, 0.1);
+        border-top: 6px solid var(--progress);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin-top: 40px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
         }
       }
 
-      updateCountdown();
-      const timer = setInterval(updateCountdown, 1000);
-    })
-    .catch(err => {
-      console.error("Failed to fetch session data:", err);
-      document.getElementById('timeDisplay').textContent = "Error loading data";
-    });
-</script>
-</body>
+      #themeToggle {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: none;
+        border: 2px solid var(--subtle);
+        border-radius: 20px;
+        padding: 5px 12px;
+        color: var(--text);
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.3s;
+      }
+
+      @media (max-width: 600px) {
+        #progressContainer {
+          width: 80%;
+        }
+
+        #episodeTitle {
+          font-size: 26px;
+        }
+
+        #episodeNumber {
+          font-size: 22px;
+        }
+
+        #timeDisplay {
+          font-size: 22px;
+        }
+
+        #themeToggle {
+          font-size: 14px;
+          padding: 4px 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <button id="themeToggle">Toggle Theme</button>
+
+    <h1 id="episodeTitle">Now watching :</h1>
+    <p id="episodeNumber"></p>
+    <p id="whereLabel">Where we're at:</p>
+
+    <div id="progressContainer">
+      <div id="progressBar"></div>
+    </div>
+
+    <div id="timeDisplay">Loading...</div>
+    <div id="loader"></div>
+
+    <script>
+      const API_URL =
+        "https://script.google.com/macros/s/AKfycby96zPEI5H5xBFHGLd4cnbYaRSEH_WHHg9Fyt9v_UG7tP2Q6ma5WuRFXDAm9WbXjlz4qA/exec";
+
+      function parseDuration(str) {
+        const [h = 0, m = 0, s = 0] = str.split(":").map(Number);
+        return h * 3600 + m * 60 + s;
+      }
+
+      function formatTime(seconds) {
+        const hrs = Math.floor(seconds / 3600)
+          .toString()
+          .padStart(2, "0");
+        const mins = Math.floor((seconds % 3600) / 60)
+          .toString()
+          .padStart(2, "0");
+        const secs = Math.floor(seconds % 60)
+          .toString()
+          .padStart(2, "0");
+        return `${hrs}:${mins}:${secs}`;
+      }
+
+      fetch(API_URL)
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("Fetched data:", data);
+
+          const loader = document.getElementById("loader");
+          loader.style.display = "none";
+
+          if (!data.startTime || !data.duration) {
+            document.getElementById("episodeTitle").textContent =
+              "No active session";
+            document.getElementById("timeDisplay").textContent = "--:--:--";
+            return;
+          }
+
+          const totalSeconds = parseDuration(data.duration);
+          const rawOffset = Number(data.startOffset);
+          const startOffset =
+            Number.isFinite(rawOffset) && rawOffset > 0
+              ? rawOffset
+              : totalSeconds;
+
+          const startTime = Number(data.startTime);
+          const now = Number(data.now);
+
+          let remaining = startOffset - Math.floor((now - startTime) / 1000);
+          let tick = 0;
+          let timer;
+
+          const progressBar = document.getElementById("progressBar");
+          const timeDisplay = document.getElementById("timeDisplay");
+          const episodeTitle = document.getElementById("episodeTitle");
+          const episodeNumber = document.getElementById("episodeNumber");
+          const whereLabel = document.getElementById("whereLabel");
+
+          if (!data.episode || data.episode.toString().trim() === "") {
+            episodeTitle.textContent = `Now watching : "${data.title}" (Movie)`;
+            episodeNumber.style.display = "none";
+            whereLabel.textContent = `Where we're at:`;
+          } else {
+            episodeTitle.textContent = `Now watching : "${data.title}" (Show)`;
+            episodeNumber.textContent = `Episode Number : ${data.episode}`;
+            episodeNumber.style.display = "block";
+            whereLabel.textContent = `Where we're at:`;
+          }
+
+          function updateCountdown() {
+            const currentRemaining = Math.max(remaining - tick, 0);
+            const elapsed = totalSeconds - currentRemaining;
+            const progress = Math.min(100, (elapsed / totalSeconds) * 100);
+
+            progressBar.style.width = `${progress}%`;
+            timeDisplay.textContent = `${formatTime(
+              currentRemaining
+            )} / ${formatTime(totalSeconds)}`;
+
+            if (currentRemaining <= 0) {
+              clearInterval(timer);
+              timeDisplay.textContent =
+                "00:00:00 / " + formatTime(totalSeconds);
+              progressBar.style.width = "100%";
+            }
+
+            tick++;
+          }
+
+          updateCountdown();
+          timer = setInterval(updateCountdown, 1000);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch session data:", err);
+          document.getElementById("timeDisplay").textContent =
+            "Error loading data";
+          document.getElementById("loader").style.display = "none";
+        });
+
+      // Theme toggle
+      const toggle = document.getElementById("themeToggle");
+      toggle.addEventListener("click", () => {
+        document.body.classList.toggle("light");
+      });
+    </script>
+  </body>
 </html>
