@@ -64,28 +64,34 @@
         }
 
         const totalSeconds = parseDuration(data.duration);
+        const startOffset = Number(data.startOffset || 0);
         const startTime = Number(data.startTime);
         const now = Number(data.now);
-        let remaining = Math.max(totalSeconds - Math.floor((now - startTime) / 1000), 0);
+        
+        // Calculate elapsed time including offset
+        let elapsed = (now - startTime) / 1000 + startOffset;
+        let remaining = Math.max(totalSeconds - Math.floor(elapsed), 0);
 
         const progressBar = document.getElementById('progressBar');
         const timeDisplay = document.getElementById('timeDisplay');
-        document.getElementById('episodeTitle').textContent = data.title;
+        document.getElementById('episodeTitle').textContent = `${data.title} (Ep ${data.episode || '?'})`;
 
         function updateCountdown() {
-          const elapsed = totalSeconds - remaining;
-          const progress = Math.min(100, (elapsed / totalSeconds) * 100);
-          progressBar.style.width = `${progress}%`;
-          timeDisplay.textContent = `${formatTime(remaining)} / ${formatTime(totalSeconds)}`;
-          remaining--;
+          const elapsedNow = (now - startTime) / 1000 + startOffset + (tickCount++);
+          const remainingNow = Math.max(totalSeconds - Math.floor(elapsedNow), 0);
+          const progress = Math.min(100, ((totalSeconds - remainingNow) / totalSeconds) * 100);
 
-          if (remaining < 0) {
+          progressBar.style.width = `${progress}%`;
+          timeDisplay.textContent = `${formatTime(remainingNow)} / ${formatTime(totalSeconds)}`;
+
+          if (remainingNow <= 0) {
             clearInterval(timer);
             timeDisplay.textContent = "00:00:00 / " + formatTime(totalSeconds);
             progressBar.style.width = "100%";
           }
         }
 
+        let tickCount = 0;
         updateCountdown();
         const timer = setInterval(updateCountdown, 1000);
       })
