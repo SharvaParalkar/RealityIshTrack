@@ -39,66 +39,65 @@
   </div>
   <div id="timeDisplay">Loading...</div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycby96zPEI5H5xBFHGLd4cnbYaRSEH_WHHg9Fyt9v_UG7tP2Q6ma5WuRFXDAm9WbXjlz4qA/exec";
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycby96zPEI5H5xBFHGLd4cnbYaRSEH_WHHg9Fyt9v_UG7tP2Q6ma5WuRFXDAm9WbXjlz4qA/exec";
 
-    function parseDuration(str) {
-      const [h = 0, m = 0, s = 0] = str.split(":").map(Number);
-      return h * 3600 + m * 60 + s;
-    }
+  function parseDuration(str) {
+    const [h = 0, m = 0, s = 0] = str.split(":").map(Number);
+    return h * 3600 + m * 60 + s;
+  }
 
-    function formatTime(seconds) {
-      const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
-      const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-      const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
-      return `${hrs}:${mins}:${secs}`;
-    }
+  function formatTime(seconds) {
+    const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
+    const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+    return `${hrs}:${mins}:${secs}`;
+  }
 
-    fetch(API_URL)
-      .then(res => res.json())
-      .then(data => {
-        if (!data.startTime || !data.duration) {
-          document.getElementById('episodeTitle').textContent = "No active session";
-          document.getElementById('timeDisplay').textContent = "--:--:--";
-          return;
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.startTime || !data.duration) {
+        document.getElementById('episodeTitle').textContent = "No active session";
+        document.getElementById('timeDisplay').textContent = "--:--:--";
+        return;
+      }
+
+      const totalSeconds = parseDuration(data.duration);
+      const startOffset = Number(data.startOffset || 0);
+      const startTime = Number(data.startTime);
+      const now = Number(data.now);
+
+      let elapsed = (now - startTime) / 1000;
+      let remaining = Math.max(totalSeconds - startOffset - Math.floor(elapsed), 0);
+
+      const progressBar = document.getElementById('progressBar');
+      const timeDisplay = document.getElementById('timeDisplay');
+      document.getElementById('episodeTitle').textContent = `${data.title} (Ep ${data.episode || '?'})`;
+
+      function updateCountdown() {
+        const currentElapsed = elapsed++;
+        const actualElapsed = currentElapsed + startOffset;
+        const remainingNow = Math.max(totalSeconds - Math.floor(actualElapsed), 0);
+        const progress = Math.min(100, (actualElapsed / totalSeconds) * 100);
+
+        progressBar.style.width = `${progress}%`;
+        timeDisplay.textContent = `${formatTime(remainingNow)} / ${formatTime(totalSeconds)}`;
+
+        if (remainingNow <= 0) {
+          clearInterval(timer);
+          timeDisplay.textContent = "00:00:00 / " + formatTime(totalSeconds);
+          progressBar.style.width = "100%";
         }
+      }
 
-        const totalSeconds = parseDuration(data.duration);
-        const startOffset = Number(data.startOffset || 0);
-        const startTime = Number(data.startTime);
-        const now = Number(data.now);
-        
-        // Calculate elapsed time including offset
-        let elapsed = (now - startTime) / 1000 + startOffset;
-        let remaining = Math.max(totalSeconds - Math.floor(elapsed), 0);
-
-        const progressBar = document.getElementById('progressBar');
-        const timeDisplay = document.getElementById('timeDisplay');
-        document.getElementById('episodeTitle').textContent = `${data.title} (Ep ${data.episode || '?'})`;
-
-        function updateCountdown() {
-          const elapsedNow = (now - startTime) / 1000 + startOffset + (tickCount++);
-          const remainingNow = Math.max(totalSeconds - Math.floor(elapsedNow), 0);
-          const progress = Math.min(100, ((totalSeconds - remainingNow) / totalSeconds) * 100);
-
-          progressBar.style.width = `${progress}%`;
-          timeDisplay.textContent = `${formatTime(remainingNow)} / ${formatTime(totalSeconds)}`;
-
-          if (remainingNow <= 0) {
-            clearInterval(timer);
-            timeDisplay.textContent = "00:00:00 / " + formatTime(totalSeconds);
-            progressBar.style.width = "100%";
-          }
-        }
-
-        let tickCount = 0;
-        updateCountdown();
-        const timer = setInterval(updateCountdown, 1000);
-      })
-      .catch(err => {
-        console.error("Failed to fetch session data:", err);
-        document.getElementById('timeDisplay').textContent = "Error loading data";
-      });
-  </script>
+      updateCountdown();
+      const timer = setInterval(updateCountdown, 1000);
+    })
+    .catch(err => {
+      console.error("Failed to fetch session data:", err);
+      document.getElementById('timeDisplay').textContent = "Error loading data";
+    });
+</script>
 </body>
 </html>
