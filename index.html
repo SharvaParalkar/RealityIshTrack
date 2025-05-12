@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Watch Party Viewer</title>
-  
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Watch Party Viewer</title>
+
     <style>
       :root {
         --bg: #111;
@@ -107,6 +107,32 @@
         margin-top: 40px;
       }
 
+      #messageBox {
+        max-width: 500px;
+        font-size: 20px;
+        text-align: center;
+        color: var(--text);
+        background: var(--card-bg);
+        backdrop-filter: blur(8px);
+        padding: 12px 18px;
+        border-radius: 12px;
+        margin-top: 20px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      }
+
+      #messageBox2 {
+        max-width: 500px;
+        font-size: 20px;
+        text-align: left;
+        color: var(--text);
+        background: var(--card-bg);
+        backdrop-filter: blur(8px);
+        padding: 12px 18px;
+        border-radius: 12px;
+        margin-top: 20px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      }
+
       @keyframes spin {
         0% {
           transform: rotate(0deg);
@@ -147,6 +173,10 @@
           font-size: 22px;
         }
 
+        #messageBox {
+          font-size: 22px;
+        }
+
         #themeToggle {
           font-size: 14px;
           padding: 5px 12px;
@@ -157,6 +187,16 @@
         }
       }
 
+      #messageBox2 a:link,
+#messageBox2 a:visited {
+  color: var(--progress);
+  text-decoration: underline;
+}
+
+#messageBox2 a:hover,
+#messageBox2 a:active {
+  color: #4cd4cb;
+}
     </style>
   </head>
   <body>
@@ -172,6 +212,26 @@
       <div id="timeDisplay">Loading...</div>
       <div id="loader"></div>
       <button id="themeToggle">Toggle Theme</button>
+
+      <div id="messageBox">
+        Hi I'm Ishani! I made this tracker so you can watch along with us even
+        if you can't watch through a computer with Teleparty.
+      </div>
+
+      <div id="messageBox2">
+        Alternative Links : (If you don't have netflix / want to watch for
+        free)<br /><br />
+        <a href="https://cataz.to/" target="_blank">https://cataz.to/</a><br />
+        <a href="https://ww19.0123movie.net/" target="_blank"
+          >https://ww19.0123movie.net/</a
+        ><br /><br />
+        <a
+          href="https://chromewebstore.google.com/detail/adblock-%E2%80%94-block-ads-acros/gighmmpiobklfepjocnamgkkbiglidom?pli=1"
+          target="_blank"
+        >
+          Please use an ad blocker if you use these links!
+        </a>
+      </div>
     </div>
 
     <script>
